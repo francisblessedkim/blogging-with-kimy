@@ -1,62 +1,91 @@
-/**
- * users.js
- * These are example routes for user management
- * This shows how to correctly structure your routes for the project
- * and the suggested pattern for retrieving data by executing queries
- *
- * NB. it's better NOT to use arrow functions for callbacks with the SQLite library
-* 
- */
-
-const express = require("express");
+const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
+const passport = require('passport');
 
-/**
- * @desc Display all the users
- */
-router.get("/list-users", (req, res, next) => {
-    // Define the query
-    query = "SELECT * FROM users"
+// User model
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('./database.db');
 
-    // Execute the query and render the page with the results
-    global.db.all(query, 
-        function (err, rows) {
-            if (err) {
-                next(err); //send the error on to the error handler
+// Register Page
+router.get('/register', (req, res) => res.render('register', { errors: [] }));
+
+// Login Page
+router.get('/login', (req, res) => res.render('login'));
+
+// Register
+router.post('/register', (req, res) => {
+    const { name, email, password, password2 } = req.body;
+    let errors = [];
+
+    if (!name || !email || !password || !password2) {
+        errors.push({ msg: 'Please enter all fields' });
+    }
+
+    if (password != password2) {
+        errors.push({ msg: 'Passwords do not match' });
+    }
+
+    if (password.length < 6) {
+        errors.push({ msg: 'Password must be at least 6 characters' });
+    }
+
+    if (errors.length > 0) {
+        res.render('register', {
+            errors,
+            name,
+            email,
+            password,
+            password2
+        });
+    } else {
+        db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+            if (user) {
+                errors.push({ msg: 'Email already exists' });
+                res.render('register', {
+                    errors,
+                    name,
+                    email,
+                    password,
+                    password2
+                });
             } else {
-                res.json(rows); // render page as simple json
+                const newUser = {
+                    name: name,
+                    email: email,
+                    password: password
+                };
+
+                bcrypt.genSalt(10, (err, salt) => {
+                    bcrypt.hash(newUser.password, salt, (err, hash) => {
+                        if (err) throw err;
+                        newUser.password = hash;
+                        db.run('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [newUser.name, newUser.email, newUser.password], (err) => {
+                            if (err) throw err;
+                            req.flash('success_msg', 'You are now registered and can log in');
+                            res.redirect('/users/login');
+                        });
+                    });
+                });
             }
-        }
-    );
+        });
+    }
 });
 
-/**
- * @desc Displays a page with a form for creating a user record
- */
-router.get("/add-user", (req, res) => {
-    res.render("add-user.ejs");
+// Login
+router.post('/login', (req, res, next) => {
+    passport.authenticate('local', {
+        successRedirect: '/author',
+        failureRedirect: '/users/login',
+        failureFlash: true
+    })(req, res, next);
 });
 
-/**
- * @desc Add a new user to the database based on data from the submitted form
- */
-router.post("/add-user", (req, res, next) => {
-    // Define the query
-    query = "INSERT INTO users (user_name) VALUES( ? );"
-    query_parameters = [req.body.user_name]
-    
-    // Execute the query and send a confirmation message
-    global.db.run(query, query_parameters,
-        function (err) {
-            if (err) {
-                next(err); //send the error on to the error handler
-            } else {
-                res.send(`New data inserted @ id ${this.lastID}!`);
-                next();
-            }
-        }
-    );
+// Logout
+router.get('/logout', (req, res) => {
+    req.logout();
+    req.flash('success_msg', 'You are logged out');
+    res.redirect('/users/login');
 });
 
-// Export the router object so index.js can access it
 module.exports = router;
