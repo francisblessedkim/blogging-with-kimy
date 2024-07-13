@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Author Settings</title>
+</head>
+<body>
+    <h1>Settings Page</h1>
+    <form action="/author/settings" method="POST">
+        <label for="blog_title">Blog Title:</label>
+        <input type="text" id="blog_title" name="blog_title" value="<%= blogTitle %>" required><br>
+        <label for="author_name">Author Name:</label>
+        <input type="text" id="author_name" name="author_name" value="<%= authorName %>" required><br>
+        <button type="submit">Save</button>
+    </form>
+    <button onclick="location.href='/author'">Back</button>
+</body>
+</html>

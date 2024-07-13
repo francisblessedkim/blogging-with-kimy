@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reader Home Page</title>
+</head>
+<body>
+    <h1>Reader Home Page</h1>
+    <h2>Blog Title: <%= blogTitle %></h2>
+    <h3>Author Name: <%= authorName %></h3>
+
+    <h2>Published Articles</h2>
+    <ul>
+        <% articles.forEach(article => { %>
+            <li>
+                <strong><%= article.title %></strong>
+                <p>Published: <%= article.published_at %></p>
+                <a href="/reader/article/<%= article.id %>">Read Article</a>
+            </li>
+        <% }) %>
+    </ul>
+</body>
+</html>

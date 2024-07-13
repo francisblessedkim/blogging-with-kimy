@@ -15,8 +15,8 @@ app.use(express.static(__dirname + '/public')); // set location of static files
 // Set up SQLite
 // Items in the global namespace are accessible throught out the node application
 const sqlite3 = require('sqlite3').verbose();
-global.db = new sqlite3.Database('./database.db',function(err){
-    if(err){
+global.db = new sqlite3.Database('./database.db', function(err) {
+    if (err) {
         console.error(err);
         process.exit(1); // bail out we can't connect to the DB
     } else {
@@ -27,16 +27,20 @@ global.db = new sqlite3.Database('./database.db',function(err){
 
 // Handle requests to the home page 
 app.get('/', (req, res) => {
-    res.send('Hello World!')
+    res.render('index');
 });
 
 // Add all the route handlers in usersRoutes to the app under the path /users
 const usersRoutes = require('./routes/users');
 app.use('/users', usersRoutes);
 
+// Add the route handlers for the author and reader pages
+const authorsRouter = require('./routes/authors');
+const readersRouter = require('./routes/readers');
+app.use('/author', authorsRouter);
+app.use('/reader', readersRouter);
 
 // Make the web application listen for HTTP requests
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
-})
-
+});
