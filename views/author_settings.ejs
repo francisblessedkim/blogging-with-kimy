@@ -2,16 +2,24 @@
 <html>
 <head>
     <title>Author Settings</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
 </head>
 <body>
-    <h1>Settings Page</h1>
-    <form action="/author/settings" method="POST">
-        <label for="blog_title">Blog Title:</label>
-        <input type="text" id="blog_title" name="blog_title" value="<%= blogTitle %>" required><br>
-        <label for="author_name">Author Name:</label>
-        <input type="text" id="author_name" name="author_name" value="<%= authorName %>" required><br>
-        <button type="submit">Save</button>
-    </form>
-    <button onclick="location.href='/author'">Back</button>
+    <div class="container mt-4">
+        <h1 class="mb-4">Settings Page</h1>
+        <form action="/author/settings" method="POST">
+            <div class="form-group">
+                <label for="blog_title">Blog Title:</label>
+                <input type="text" id="blog_title" name="blog_title" class="form-control" value="<%= blogTitle %>" required>
+            </div>
+            <div class="form-group">
+                <label for="author_name">Author Name:</label>
+                <input type="text" id="author_name" name="author_name" class="form-control" value="<%= authorName %>" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button onclick="location.href='/author'" class="btn btn-secondary">Back</button>
+        </form>
+    </div>
 </body>
 </html>

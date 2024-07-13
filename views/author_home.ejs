@@ -2,48 +2,52 @@
 <html>
 <head>
     <title>Author Home Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
 </head>
 <body>
-    <h1>Author Home Page</h1>
-    <h2>Blog Title: <%= blogTitle %></h2>
-    <h3>Author Name: <%= authorName %></h3>
-    <a href="/author/settings">Settings</a>
-    <button onclick="location.href='/author/new'">Create new draft</button>
+    <div class="container mt-4">
+        <h1 class="mb-3">Author Home Page</h1>
+        <h2 class="mb-4">Blog Title: <%= blogTitle %></h2>
+        <h3 class="mb-4">Author Name: <%= authorName %></h3>
+        <a href="/author/settings" class="btn btn-secondary mb-3">Settings</a>
+        <button onclick="location.href='/author/new'" class="btn btn-primary mb-4">Create new draft</button>
 
-    <h2>Published Articles</h2>
-    <ul>
-        <% publishedArticles.forEach(article => { %>
-            <li>
-                <strong><%= article.title %></strong>
-                <p>Created: <%= article.created_at %></p>
-                <p>Published: <%= article.published_at %></p>
-                <p>Last Modified: <%= article.last_modified %></p>
-                <p>Reads: <%= article.views %></p>
-                <p>Likes: <%= article.likes %></p>
-                <a href="/reader/article/<%= article.id %>">Share Link</a>
-                <form action="/author/delete/<%= article.id %>" method="POST">
-                    <button type="submit">Delete</button>
-                </form>
-            </li>
-        <% }) %>
-    </ul>
+        <h2>Published Articles</h2>
+        <ul class="list-group mb-4">
+            <% publishedArticles.forEach(article => { %>
+                <li class="list-group-item">
+                    <strong><%= article.title %></strong>
+                    <p class="text-muted">Created: <%= article.created_at %></p>
+                    <p class="text-muted">Published: <%= article.published_at %></p>
+                    <p class="text-muted">Last Modified: <%= article.last_modified %></p>
+                    <p class="text-muted">Reads: <%= article.views %></p>
+                    <p class="text-muted">Likes: <%= article.likes %></p>
+                    <a href="/reader/article/<%= article.id %>" class="btn btn-primary">Share Link</a>
+                    <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </li>
+            <% }) %>
+        </ul>
 
-    <h2>Draft Articles</h2>
-    <ul>
-        <% draftArticles.forEach(article => { %>
-            <li>
-                <strong><%= article.title %></strong>
-                <p>Created: <%= article.created_at %></p>
-                <p>Last Modified: <%= article.last_modified %></p>
-                <a href="/author/edit/<%= article.id %>">Edit</a>
-                <form action="/author/publish/<%= article.id %>" method="POST">
-                    <button type="submit">Publish</button>
-                </form>
-                <form action="/author/delete/<%= article.id %>" method="POST">
-                    <button type="submit">Delete</button>
-                </form>
-            </li>
-        <% }) %>
-    </ul>
+        <h2>Draft Articles</h2>
+        <ul class="list-group">
+            <% draftArticles.forEach(article => { %>
+                <li class="list-group-item">
+                    <strong><%= article.title %></strong>
+                    <p class="text-muted">Created: <%= article.created_at %></p>
+                    <p class="text-muted">Last Modified: <%= article.last_modified %></p>
+                    <a href="/author/edit/<%= article.id %>" class="btn btn-primary">Edit</a>
+                    <form action="/author/publish/<%= article.id %>" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-success">Publish</button>
+                    </form>
+                    <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </li>
+            <% }) %>
+        </ul>
+    </div>
 </body>
 </html>

@@ -2,38 +2,46 @@
 <html>
 <head>
     <title><%= article.title %></title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
 </head>
 <body>
-    <h1><%= article.title %></h1>
-    <p>Published: <%= article.published_at %></p>
-    <p>Views: <%= article.views %></p>
-    <p>Likes: <%= article.likes %></p>
-    <p><%= article.content %></p>
+    <div class="container mt-4">
+        <h1 class="mb-3"><%= article.title %></h1>
+        <p class="text-muted">Published: <%= article.published_at %></p>
+        <p class="text-muted">Views: <%= article.views %></p>
+        <p class="text-muted">Likes: <%= article.likes %></p>
+        <p><%= article.content %></p>
 
-    <form action="/reader/article/<%= article.id %>/like" method="POST">
-        <button type="submit">Like</button>
-    </form>
+        <form action="/reader/article/<%= article.id %>/like" method="POST" class="mb-3">
+            <button type="submit" class="btn btn-primary">Like</button>
+        </form>
 
-    <button onclick="location.href='/reader'">Back</button>
+        <button onclick="location.href='/reader'" class="btn btn-secondary mb-4">Back</button>
 
-    <h2>Comments</h2>
-    <ul>
-        <% comments.forEach(comment => { %>
-            <li>
-                <strong><%= comment.commenter_name %></strong>
-                <p><%= comment.comment %></p>
-                <p>Posted: <%= comment.created_at %></p>
-            </li>
-        <% }) %>
-    </ul>
+        <h2>Comments</h2>
+        <ul class="list-group mb-4">
+            <% comments.forEach(comment => { %>
+                <li class="list-group-item">
+                    <strong><%= comment.commenter_name %></strong>
+                    <p><%= comment.comment %></p>
+                    <small class="text-muted">Posted: <%= comment.created_at %></small>
+                </li>
+            <% }) %>
+        </ul>
 
-    <h2>Add a Comment</h2>
-    <form action="/reader/article/<%= article.id %>/comment" method="POST">
-        <label for="commenter_name">Name:</label>
-        <input type="text" id="commenter_name" name="commenter_name" required><br>
-        <label for="comment">Comment:</label>
-        <textarea id="comment" name="comment" required></textarea><br>
-        <button type="submit">Submit Comment</button>
-    </form>
+        <h2>Add a Comment</h2>
+        <form action="/reader/article/<%= article.id %>/comment" method="POST">
+            <div class="form-group">
+                <label for="commenter_name">Name:</label>
+                <input type="text" id="commenter_name" name="commenter_name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="comment">Comment:</label>
+                <textarea id="comment" name="comment" class="form-control" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Comment</button>
+        </form>
+    </div>
 </body>
 </html>
