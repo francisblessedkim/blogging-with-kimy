@@ -4,27 +4,69 @@
     <title>Login</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+        }
+        .welcome-message {
+            text-align: center;
+            color: #007bff;
+        }
+        .subtext {
+            color: #343a40;
+            text-align: center;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1 class="mb-4">Login</h1>
-        <form action="/users/login" method="POST">
-            <% if (error_msg) { %>
-                <div class="alert alert-danger">
-                    <p><%= error_msg %></p>
-                </div>
-            <% } %>
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" class="form-control" required>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 welcome-message">
+                <h1>Welcome Author</h1>
+                <p class="subtext">Please log in to access your author dashboard and manage your articles.</p>
             </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" class="form-control" required>
+            <div class="col-md-6">
+                <h1 class="mb-4">Login</h1>
+                <form action="/users/login" method="POST">
+                    <% if (error_msg) { %>
+                        <div class="alert alert-danger">
+                            <p><%= error_msg %></p>
+                        </div>
+                    <% } %>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn gradient-button">Login</button>
+                </form>
+                <p class="mt-2">Don't have an account? <a href="/users/register">Register here</a></p>
             </div>
-            <button type="submit" class="btn btn-primary">Login</button>
-        </form>
-        <p class="mt-2">Don't have an account? <a href="/users/register">Register here</a></p>
+        </div>
     </div>
 </body>
 </html>

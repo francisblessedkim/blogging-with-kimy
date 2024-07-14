@@ -4,12 +4,39 @@
     <title>Main Home Page</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+        .container {
+            text-align: center;
+        }
+        .welcome-message {
+            color: #007bff;
+        }
+        .subtext {
+            color: #343a40;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1 class="mb-4">Welcome to the Blogging Tool</h1>
-        <a href="/author" class="btn btn-primary mb-3">Author Home Page</a>
-        <a href="/reader" class="btn btn-secondary mb-3">Reader Home Page</a>
+    <div class="container">
+        <h1 class="welcome-message mb-4">Welcome to Blog with Kimy</h1>
+        <p class="subtext mb-4">Your space to share thoughts and ideas with the world.</p>
+        <a href="/author" class="btn gradient-button mb-3">Author Home Page</a>
+        <a href="/reader" class="btn gradient-button mb-3">Reader Home Page</a>
     </div>
 </body>
 </html>

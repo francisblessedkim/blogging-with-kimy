@@ -4,14 +4,54 @@
     <title>Author Home Page</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            text-align: center;
+        }
+        .header {
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+        }
+        .header h2 {
+            color: #343a40;
+        }
+        .list-group-item {
+            border-radius: 10px;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1 class="mb-3">Author Home Page</h1>
-        <h2 class="mb-4">Blog Title: <%= blogTitle %></h2>
-        <h3 class="mb-4">Author Name: <%= authorName %></h3>
-        <a href="/author/settings" class="btn btn-secondary mb-3">Settings</a>
-        <button onclick="location.href='/author/new'" class="btn btn-primary mb-4">Create new draft</button>
+    <div class="container">
+        <div class="header">
+            <h1>Author Home Page</h1>
+            <h2>Blog Title: <%= blogTitle %></h2>
+            <h2>Author Name: <%= authorName %></h2>
+        </div>
+        <a href="/author/settings" class="btn gradient-button mb-3">Settings</a>
+        <button onclick="location.href='/author/new'" class="btn gradient-button mb-4">Create New Draft</button>
 
         <h2>Published Articles</h2>
         <ul class="list-group mb-4">
@@ -23,7 +63,7 @@
                     <p class="text-muted">Last Modified: <%= article.last_modified %></p>
                     <p class="text-muted">Reads: <%= article.views %></p>
                     <p class="text-muted">Likes: <%= article.likes %></p>
-                    <a href="/reader/article/<%= article.id %>" class="btn btn-primary">Share Link</a>
+                    <a href="/reader/article/<%= article.id %>" class="btn gradient-button">Share Link</a>
                     <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
                         <button type="submit" class="btn btn-danger">Delete</button>
                     </form>
@@ -38,9 +78,9 @@
                     <strong><%= article.title %></strong>
                     <p class="text-muted">Created: <%= article.created_at %></p>
                     <p class="text-muted">Last Modified: <%= article.last_modified %></p>
-                    <a href="/author/edit/<%= article.id %>" class="btn btn-primary">Edit</a>
+                    <a href="/author/edit/<%= article.id %>" class="btn gradient-button">Edit</a>
                     <form action="/author/publish/<%= article.id %>" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-success">Publish</button>
+                        <button type="submit" class="btn gradient-button">Publish</button>
                     </form>
                     <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
                         <button type="submit" class="btn btn-danger">Delete</button>
