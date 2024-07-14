@@ -1,24 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Author Settings</title>
+    <title>Settings</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1 class="mb-4">Settings Page</h1>
+    <div class="container">
+        <h1 class="mb-4">Settings</h1>
         <form action="/author/settings" method="POST">
             <div class="form-group">
                 <label for="blog_title">Blog Title:</label>
-                <input type="text" id="blog_title" name="blog_title" class="form-control" value="<%= blogTitle %>" required>
+                <input type="text" id="blog_title" name="blog_title" class="form-control" value="<%= blogTitle %>" placeholder="Enter your blog title" required>
             </div>
             <div class="form-group">
                 <label for="author_name">Author Name:</label>
-                <input type="text" id="author_name" name="author_name" class="form-control" value="<%= authorName %>" required>
+                <input type="text" id="author_name" name="author_name" class="form-control" value="<%= authorName %>" placeholder="Enter your name" required>
             </div>
-            <button type="submit" class="btn btn-primary">Save</button>
-            <button onclick="location.href='/author'" class="btn btn-secondary">Back</button>
+            <button type="submit" class="btn gradient-button">Save</button>
+            <a href="/author" class="btn btn-secondary">Back</a>
         </form>
     </div>
 </body>

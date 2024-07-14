@@ -7,16 +7,13 @@
     <style>
         body, html {
             height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             background-color: #f8f9fa;
         }
         .container {
-            max-width: 800px;
-            text-align: center;
+            margin-top: 20px;
         }
         .header {
+            text-align: center;
             margin-bottom: 20px;
         }
         .header h1 {
@@ -25,10 +22,12 @@
         .header h2 {
             color: #343a40;
         }
+        .column {
+            padding: 20px;
+        }
         .list-group-item {
             border-radius: 10px;
             margin-bottom: 10px;
-            text-align: left;
         }
         .btn {
             margin: 5px;
@@ -50,44 +49,50 @@
             <h2>Blog Title: <%= blogTitle %></h2>
             <h2>Author Name: <%= authorName %></h2>
         </div>
-        <a href="/author/settings" class="btn gradient-button mb-3">Settings</a>
-        <button onclick="location.href='/author/new'" class="btn gradient-button mb-4">Create New Draft</button>
-
-        <h2>Published Articles</h2>
-        <ul class="list-group mb-4">
-            <% publishedArticles.forEach(article => { %>
-                <li class="list-group-item">
-                    <strong><%= article.title %></strong>
-                    <p class="text-muted">Created: <%= article.created_at %></p>
-                    <p class="text-muted">Published: <%= article.published_at %></p>
-                    <p class="text-muted">Last Modified: <%= article.last_modified %></p>
-                    <p class="text-muted">Reads: <%= article.views %></p>
-                    <p class="text-muted">Likes: <%= article.likes %></p>
-                    <a href="/reader/article/<%= article.id %>" class="btn gradient-button">Share Link</a>
-                    <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
-                </li>
-            <% }) %>
-        </ul>
-
-        <h2>Draft Articles</h2>
-        <ul class="list-group">
-            <% draftArticles.forEach(article => { %>
-                <li class="list-group-item">
-                    <strong><%= article.title %></strong>
-                    <p class="text-muted">Created: <%= article.created_at %></p>
-                    <p class="text-muted">Last Modified: <%= article.last_modified %></p>
-                    <a href="/author/edit/<%= article.id %>" class="btn gradient-button">Edit</a>
-                    <form action="/author/publish/<%= article.id %>" method="POST" class="d-inline">
-                        <button type="submit" class="btn gradient-button">Publish</button>
-                    </form>
-                    <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
-                </li>
-            <% }) %>
-        </ul>
+        <div class="d-flex justify-content-between mb-4">
+            <a href="/author/settings" class="btn gradient-button">Settings</a>
+            <button onclick="location.href='/author/new'" class="btn gradient-button">Create New Draft</button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 column">
+                <h2>Published Articles</h2>
+                <ul class="list-group mb-4">
+                    <% publishedArticles.forEach(article => { %>
+                        <li class="list-group-item">
+                            <strong><%= article.title %></strong>
+                            <p class="text-muted">Created: <%= article.created_at %></p>
+                            <p class="text-muted">Published: <%= article.published_at %></p>
+                            <p class="text-muted">Last Modified: <%= article.last_modified %></p>
+                            <p class="text-muted">Reads: <%= article.views %></p>
+                            <p class="text-muted">Likes: <%= article.likes %></p>
+                            <a href="/reader/article/<%= article.id %>" class="btn gradient-button">Share Link</a>
+                            <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
+            <div class="col-md-6 column">
+                <h2>Draft Articles</h2>
+                <ul class="list-group">
+                    <% draftArticles.forEach(article => { %>
+                        <li class="list-group-item">
+                            <strong><%= article.title %></strong>
+                            <p class="text-muted">Created: <%= article.created_at %></p>
+                            <p class="text-muted">Last Modified: <%= article.last_modified %></p>
+                            <a href="/author/edit/<%= article.id %>" class="btn gradient-button">Edit</a>
+                            <form action="/author/publish/<%= article.id %>" method="POST" class="d-inline">
+                                <button type="submit" class="btn gradient-button">Publish</button>
+                            </form>
+                            <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
+        </div>
     </div>
 </body>
 </html>
