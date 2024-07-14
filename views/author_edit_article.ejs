@@ -4,22 +4,95 @@
     <title>Edit Article</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+        }
+        .header h2 {
+            color: #343a40;
+        }
+        .column {
+            padding: 20px;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+        .instructions-container {
+            background: linear-gradient(to right, #6a11cb, #2575fc); /* Gradient background */
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: white;
+        }
+        .instructions-container h4 {
+            margin-bottom: 1rem;
+        }
+        .instructions-container p {
+            margin-bottom: 0.5rem;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1 class="mb-4">Edit Article</h1>
-        <form action="/author/edit/<%= article.id %>" method="POST">
-            <div class="form-group">
-                <label for="title">Title:</label>
-                <input type="text" id="title" name="title" class="form-control" value="<%= article.title %>" required>
+    <div class="container">
+        <div class="header">
+            <h1>Edit Article Page</h1>
+            <h2>Make Your Article Shine</h2>
+        </div>
+        <div class="row">
+            <div class="col-md-6 column">
+                <form action="/author/edit/<%= article.id %>" method="POST">
+                    <div class="form-group">
+                        <label for="title">Title:</label>
+                        <input type="text" id="title" name="title" class="form-control" value="<%= article.title %>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="content">Content:</label>
+                        <textarea id="content" name="content" class="form-control" rows="10" required><%= article.content %></textarea>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn gradient-button">Save Changes</button>
+                        <button type="button" onclick="location.href='/author'" class="btn btn-secondary">Back</button>
+                    </div>
+                </form>
             </div>
-            <div class="form-group">
-                <label for="content">Content:</label>
-                <textarea id="content" name="content" class="form-control" required><%= article.content %></textarea>
+            <div class="col-md-6 column">
+                <div class="instructions-container">
+                    <h4>Instructions for Authors</h4>
+                    <p>1. Keep your title concise and compelling.</p>
+                    <p>2. Make sure your content is well-organized and easy to read.</p>
+                    <p>3. Use headings and subheadings to structure your article.</p>
+                    <p>4. Proofread your article for grammar and spelling errors.</p>
+                    <p>5. Use images and media to enhance your content.</p>
+                    <p>6. Stay true to your voice and be authentic.</p>
+                    <br>
+                    <h4>Inspirational Words</h4>
+                    <p>"Writing is the painting of the voice." - Voltaire</p>
+                    <p>"The scariest moment is always just before you start." - Stephen King</p>
+                    <p>"You can make anything by writing." - C.S. Lewis</p>
+                    <p>"Write what should not be forgotten." - Isabel Allende</p>
+                    <p>"Writing is the best way to talk without being interrupted." - Jules Renard</p>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <button onclick="location.href='/author'" class="btn btn-secondary">Back</button>
-        </form>
+        </div>
     </div>
 </body>
 </html>
