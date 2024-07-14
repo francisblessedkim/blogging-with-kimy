@@ -4,44 +4,97 @@
     <title><%= article.title %></title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+        }
+        .header p {
+            color: #343a40;
+        }
+        .content {
+            text-align: left;
+        }
+        .content p {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+        .comment-section {
+            margin-top: 40px;
+        }
+        .comment-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: linear-gradient(to right, #00c6ff, #90f7ec); /* New gradient background for comments */
+            color: white;
+        }
+        .comment-item .text-muted {
+            color: #d1d1d1; /* Lighter color for date and time */
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1 class="mb-3"><%= article.title %></h1>
-        <p class="text-muted">Published: <%= article.published_at %></p>
-        <p class="text-muted">Views: <%= article.views %></p>
-        <p class="text-muted">Likes: <%= article.likes %></p>
-        <p><%= article.content %></p>
-
-        <form action="/reader/article/<%= article.id %>/like" method="POST" class="mb-3">
-            <button type="submit" class="btn btn-primary">Like</button>
-        </form>
-
-        <button onclick="location.href='/reader'" class="btn btn-secondary mb-4">Back</button>
-
-        <h2>Comments</h2>
-        <ul class="list-group mb-4">
-            <% comments.forEach(comment => { %>
-                <li class="list-group-item">
-                    <strong><%= comment.commenter_name %></strong>
-                    <p><%= comment.comment %></p>
-                    <small class="text-muted">Posted: <%= comment.created_at %></small>
-                </li>
-            <% }) %>
-        </ul>
-
-        <h2>Add a Comment</h2>
-        <form action="/reader/article/<%= article.id %>/comment" method="POST">
-            <div class="form-group">
-                <label for="commenter_name">Name:</label>
-                <input type="text" id="commenter_name" name="commenter_name" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="comment">Comment:</label>
-                <textarea id="comment" name="comment" class="form-control" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Submit Comment</button>
-        </form>
+    <div class="container">
+        <div class="header">
+            <h1><%= article.title %></h1>
+            <p class="text-muted">Published: <%= article.published_at %></p>
+            <p class="text-muted">Views: <%= article.views %> | Likes: <%= article.likes %></p>
+        </div>
+        <div class="content">
+            <p><%= article.content %></p>
+        </div>
+        <div class="d-flex justify-content-between">
+            <form action="/reader/article/<%= article.id %>/like" method="POST">
+                <button type="submit" class="btn gradient-button">Like</button>
+            </form>
+            <button onclick="location.href='/reader'" class="btn btn-secondary">Back</button>
+        </div>
+        <div class="comment-section">
+            <h3>Comments</h3>
+            <ul class="list-group">
+                <% comments.forEach(comment => { %>
+                    <li class="list-group-item comment-item">
+                        <strong><%= comment.commenter_name %>:</strong>
+                        <p><%= comment.comment %></p>
+                        <small class="text-muted">Posted: <%= comment.created_at %></small>
+                    </li>
+                <% }) %>
+            </ul>
+            <h4>Add a Comment</h4>
+            <form action="/reader/article/<%= article.id %>/comment" method="POST">
+                <div class="form-group">
+                    <label for="commenter_name">Name:</label>
+                    <input type="text" id="commenter_name" name="commenter_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="comment">Comment:</label>
+                    <textarea id="comment" name="comment" class="form-control" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="btn gradient-button">Submit Comment</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>

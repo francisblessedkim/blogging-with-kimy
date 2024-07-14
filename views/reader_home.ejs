@@ -4,18 +4,54 @@
     <title>Reader Home Page</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+        }
+        .header h2 {
+            color: #343a40;
+        }
+        .list-group-item {
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1 class="mb-3">Reader Home Page</h1>
-        <h2 class="mb-4">Blog Title: <%= blogTitle %></h2>
-        <h3 class="mb-4">Author Name: <%= authorName %></h3>
+    <div class="container">
+        <div class="header">
+            <h1>Reader Home Page</h1>
+            <h2>Blog Title: <%= blogTitle %></h2>
+            <h3>Author Name: <%= authorName %></h3>
+        </div>
         <ul class="list-group">
             <% articles.forEach(article => { %>
                 <li class="list-group-item">
                     <h4><%= article.title %></h4>
                     <p class="text-muted">Published: <%= article.published_at %></p>
-                    <a href="/reader/article/<%= article.id %>" class="btn btn-primary">Read Article</a>
+                    <a href="/reader/article/<%= article.id %>" class="btn gradient-button">Read Article</a>
                 </li>
             <% }) %>
         </ul>
