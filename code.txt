@@ -1,0 +1,1293 @@
+// auth.js code 
+module.exports = {
+    ensureAuthenticated: function(req, res, next) {
+        if (req.isAuthenticated()) {
+            return next();
+        }
+        req.flash('error_msg', 'Please log in to view that resource');
+        res.redirect('/users/login');
+    }
+};
+
+// passport.js code 
+const LocalStrategy = require('passport-local').Strategy;
+const bcrypt = require('bcryptjs');
+
+// Load User model
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('./database.db');
+
+module.exports = function(passport) {
+    passport.use(
+        new LocalStrategy({ usernameField: 'email' }, (email, password, done) => {
+            db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+                if (err) throw err;
+                if (!user) {
+                    return done(null, false, { message: 'No user found' });
+                }
+
+                bcrypt.compare(password, user.password, (err, isMatch) => {
+                    if (err) throw err;
+                    if (isMatch) {
+                        return done(null, user);
+                    } else {
+                        return done(null, false, { message: 'Password incorrect' });
+                    }
+                });
+            });
+        })
+    );
+
+    passport.serializeUser((user, done) => {
+        done(null, user.id);
+    });
+
+    passport.deserializeUser((id, done) => {
+        db.get('SELECT * FROM users WHERE id = ?', [id], (err, user) => {
+            done(err, user);
+        });
+    });
+};
+
+//main.css code 
+.gradient-button {
+    background: linear-gradient(to right, #007bff, #00c6ff);
+    border: none;
+    color: white;
+}
+
+.gradient-button:hover {
+    background: linear-gradient(to left, #007bff, #00c6ff);
+}
+
+
+//author.js code
+const express = require('express');
+const router = express.Router();
+const { ensureAuthenticated } = require('../config/auth');
+
+// Author home page route
+router.get('/', ensureAuthenticated, (req, res) => {
+    global.db.get('SELECT blog_title, name FROM authors WHERE id = 1', (err, row) => {
+        if (err) {
+            console.error("Error fetching author data:", err);
+            return res.status(500).send('Database error');
+        }
+
+        if (!row) {
+            console.error("Author data not found");
+            return res.status(404).send('Author data not found');
+        }
+
+        const blogTitle = row.blog_title;
+        const authorName = row.name;
+
+        global.db.all('SELECT * FROM articles WHERE author_id = ? AND published_at IS NOT NULL', [req.user.id], (err, publishedArticles) => {
+            if (err) {
+                console.error("Error fetching published articles:", err);
+                return res.status(500).send('Database error');
+            }
+
+            global.db.all('SELECT * FROM articles WHERE author_id = ? AND published_at IS NULL', [req.user.id], (err, draftArticles) => {
+                if (err) {
+                    console.error("Error fetching draft articles:", err);
+                    return res.status(500).send('Database error');
+                }
+
+                res.render('author_home', {
+                    blogTitle: blogTitle,
+                    authorName: authorName,
+                    publishedArticles: publishedArticles,
+                    draftArticles: draftArticles
+                });
+            });
+        });
+    });
+});
+
+// Author settings page route
+router.get('/settings', ensureAuthenticated, (req, res) => {
+    global.db.get('SELECT blog_title, name FROM authors WHERE id = 1', (err, row) => {
+        if (err) {
+            console.error("Error fetching author settings:", err);
+            return res.status(500).send('Database error');
+        }
+
+        res.render('author_settings', {
+            blogTitle: row.blog_title,
+            authorName: row.name
+        });
+    });
+});
+
+// Handle settings form submission
+router.post('/settings', ensureAuthenticated, (req, res) => {
+    const { blog_title, author_name } = req.body;
+    global.db.run('UPDATE authors SET blog_title = ?, name = ? WHERE id = 1', [blog_title, author_name], function(err) {
+        if (err) {
+            console.error("Error updating author settings:", err);
+            return res.status(500).send('Database error');
+        }
+        req.flash('success_msg', 'Settings updated successfully');
+        res.redirect('/author');
+    });
+});
+
+// Edit article page route
+router.get('/edit/:id', ensureAuthenticated, (req, res) => {
+    const articleId = req.params.id;
+    global.db.get('SELECT * FROM articles WHERE id = ?', [articleId], (err, article) => {
+        if (err) {
+            console.error("Error fetching article:", err);
+            return res.status(500).send('Database error');
+        }
+
+        res.render('author_edit_article', { article: article });
+    });
+});
+
+// Handle edit article form submission
+router.post('/edit/:id', ensureAuthenticated, (req, res) => {
+    const articleId = req.params.id;
+    const { title, content } = req.body;
+    global.db.run('UPDATE articles SET title = ?, content = ?, last_modified = CURRENT_TIMESTAMP WHERE id = ?', [title, content, articleId], function(err) {
+        if (err) {
+            console.error("Error updating article:", err);
+            return res.status(500).send('Database error');
+        }
+        req.flash('success_msg', 'Article updated successfully');
+        res.redirect('/author');
+    });
+});
+
+// Create new draft article route
+router.get('/new', ensureAuthenticated, (req, res) => {
+    const newArticle = {
+        author_id: req.user.id,
+        title: 'Untitled',
+        content: '',
+        created_at: new Date().toISOString(),
+        last_modified: new Date().toISOString()
+    };
+    global.db.run('INSERT INTO articles (author_id, title, content, created_at, last_modified) VALUES (?, ?, ?, ?, ?)', [newArticle.author_id, newArticle.title, newArticle.content, newArticle.created_at, newArticle.last_modified], function(err) {
+        if (err) {
+            console.error("Error creating new draft article:", err);
+            return res.status(500).send('Database error');
+        }
+        const articleId = this.lastID;
+        res.redirect(`/author/edit/${articleId}`);
+    });
+});
+
+// Handle publish article
+router.post('/publish/:id', ensureAuthenticated, (req, res) => {
+    const articleId = req.params.id;
+    global.db.run('UPDATE articles SET published_at = CURRENT_TIMESTAMP WHERE id = ?', [articleId], function(err) {
+        if (err) {
+            console.error("Error publishing article:", err);
+            return res.status(500).send('Database error');
+        }
+        req.flash('success_msg', 'Article published successfully');
+        res.redirect('/author');
+    });
+});
+
+// Handle delete article
+router.post('/delete/:id', ensureAuthenticated, (req, res) => {
+    const articleId = req.params.id;
+    global.db.run('DELETE FROM articles WHERE id = ?', [articleId], function(err) {
+        if (err) {
+            console.error("Error deleting article:", err);
+            return res.status(500).send('Database error');
+        }
+        req.flash('success_msg', 'Article deleted successfully');
+        res.redirect('/author');
+    });
+});
+
+module.exports = router;
+
+//readers.js code 
+const express = require('express');
+const { body, validationResult } = require('express-validator');
+const router = express.Router();
+
+// Reader home page route
+router.get('/', (req, res) => {
+    global.db.get('SELECT blog_title, name FROM authors WHERE id = 1', (err, row) => {
+        if (err) {
+            console.error("Error fetching author settings:", err);
+            return res.status(500).send('Database error');
+        }
+
+        const blogTitle = row.blog_title;
+        const authorName = row.name;
+
+        global.db.all('SELECT * FROM articles WHERE published_at IS NOT NULL ORDER BY published_at DESC', (err, articles) => {
+            if (err) {
+                console.error("Error fetching articles:", err);
+                return res.status(500).send('Database error');
+            }
+
+            res.render('reader_home', {
+                blogTitle: blogTitle,
+                authorName: authorName,
+                articles: articles
+            });
+        });
+    });
+});
+
+// Reader article page route
+router.get('/article/:id', (req, res) => {
+    const articleId = req.params.id;
+    global.db.get('SELECT * FROM articles WHERE id = ?', [articleId], (err, article) => {
+        if (err) {
+            console.error("Error fetching article:", err);
+            return res.status(500).send('Database error');
+        }
+
+        if (!article) {
+            console.error("Article not found:", articleId);
+            return res.status(404).send('Article not found');
+        }
+
+        global.db.all('SELECT * FROM comments WHERE article_id = ? ORDER BY created_at DESC', [articleId], (err, comments) => {
+            if (err) {
+                console.error("Error fetching comments:", err);
+                return res.status(500).send('Database error');
+            }
+
+            res.render('reader_article', { article: article, comments: comments });
+        });
+    });
+});
+
+// Handle article like
+router.post('/article/:id/like', (req, res) => {
+    const articleId = req.params.id;
+    global.db.run('UPDATE articles SET likes = likes + 1 WHERE id = ?', [articleId], function(err) {
+        if (err) {
+            console.error("Error liking article:", err);
+            return res.status(500).send('Database error');
+        }
+        res.redirect(`/reader/article/${articleId}`);
+    });
+});
+
+// Handle new comment submission
+router.post('/article/:id/comment', [
+    body('commenter_name').notEmpty().withMessage('Name is required'),
+    body('comment').notEmpty().withMessage('Comment is required')
+], (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const articleId = req.params.id;
+    const { commenter_name, comment } = req.body;
+    global.db.run('INSERT INTO comments (article_id, commenter_name, comment) VALUES (?, ?, ?)', [articleId, commenter_name, comment], function(err) {
+        if (err) {
+            console.error("Error adding comment:", err);
+            return res.status(500).send('Database error');
+        }
+        res.redirect(`/reader/article/${articleId}`);
+    });
+});
+
+module.exports = router;
+
+
+//users.js code
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const passport = require('passport');
+
+// User model
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('./database.db');
+
+// Register Page
+router.get('/register', (req, res) => res.render('register', { errors: [] }));
+
+// Login Page
+router.get('/login', (req, res) => res.render('login'));
+
+// Register
+router.post('/register', (req, res) => {
+    const { name, email, password, password2 } = req.body;
+    let errors = [];
+
+    if (!name || !email || !password || !password2) {
+        errors.push({ msg: 'Please enter all fields' });
+    }
+
+    if (password != password2) {
+        errors.push({ msg: 'Passwords do not match' });
+    }
+
+    if (password.length < 6) {
+        errors.push({ msg: 'Password must be at least 6 characters' });
+    }
+
+    if (errors.length > 0) {
+        res.render('register', {
+            errors,
+            name,
+            email,
+            password,
+            password2
+        });
+    } else {
+        db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+            if (user) {
+                errors.push({ msg: 'Email already exists' });
+                res.render('register', {
+                    errors,
+                    name,
+                    email,
+                    password,
+                    password2
+                });
+            } else {
+                const newUser = {
+                    name: name,
+                    email: email,
+                    password: password
+                };
+
+                bcrypt.genSalt(10, (err, salt) => {
+                    bcrypt.hash(newUser.password, salt, (err, hash) => {
+                        if (err) throw err;
+                        newUser.password = hash;
+                        db.run('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [newUser.name, newUser.email, newUser.password], (err) => {
+                            if (err) throw err;
+                            req.flash('success_msg', 'You are now registered and can log in');
+                            res.redirect('/users/login');
+                        });
+                    });
+                });
+            }
+        });
+    }
+});
+
+// Login
+router.post('/login', (req, res, next) => {
+    passport.authenticate('local', {
+        successRedirect: '/author',
+        failureRedirect: '/users/login',
+        failureFlash: true
+    })(req, res, next);
+});
+
+// Logout
+router.get('/logout', (req, res) => {
+    req.logout();
+    req.flash('success_msg', 'You are logged out');
+    res.redirect('/users/login');
+});
+
+module.exports = router;
+
+
+// add-users.ejs code 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet"  type="text/css" href="/main.css" />
+    <title>Add User</title>
+</head>
+<body>
+    <h1>Add User</h1>
+    <form action="add-user" method="post">
+        <p>User: <input id="user" type="text" name="user_name" /></p>
+        <button type="submit">Create a new user record</button>
+    </form>
+</body>
+</html>
+
+
+//author_edit_articles.ejs code 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Article</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+        }
+        .header h2 {
+            color: #343a40;
+        }
+        .column {
+            padding: 20px;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+        .instructions-container {
+            background: linear-gradient(to right, #6a11cb, #2575fc); /* Gradient background */
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: white;
+        }
+        .instructions-container h4 {
+            margin-bottom: 1rem;
+        }
+        .instructions-container p {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Edit Article Page</h1>
+            <h2>Make Your Article Shine</h2>
+        </div>
+        <div class="row">
+            <div class="col-md-6 column">
+                <form action="/author/edit/<%= article.id %>" method="POST">
+                    <div class="form-group">
+                        <label for="title">Title:</label>
+                        <input type="text" id="title" name="title" class="form-control" value="<%= article.title %>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="content">Content:</label>
+                        <textarea id="content" name="content" class="form-control" rows="10" required><%= article.content %></textarea>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn gradient-button">Save Changes</button>
+                        <button type="button" onclick="location.href='/author'" class="btn btn-secondary">Back</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-6 column">
+                <div class="instructions-container">
+                    <h4>Instructions for Authors</h4>
+                    <p>1. Keep your title concise and compelling.</p>
+                    <p>2. Make sure your content is well-organized and easy to read.</p>
+                    <p>3. Use headings and subheadings to structure your article.</p>
+                    <p>4. Proofread your article for grammar and spelling errors.</p>
+                    <p>5. Use images and media to enhance your content.</p>
+                    <p>6. Stay true to your voice and be authentic.</p>
+                    <br>
+                    <h4>Inspirational Words</h4>
+                    <p>"Writing is the painting of the voice." - Voltaire</p>
+                    <p>"The scariest moment is always just before you start." - Stephen King</p>
+                    <p>"You can make anything by writing." - C.S. Lewis</p>
+                    <p>"Write what should not be forgotten." - Isabel Allende</p>
+                    <p>"Writing is the best way to talk without being interrupted." - Jules Renard</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+//author_home.ejs
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Author Home Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+        }
+        .header h2 {
+            color: #343a40;
+        }
+        .column {
+            padding: 20px;
+        }
+        .list-group-item {
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Author Home Page</h1>
+            <h2>Blog Title: <%= blogTitle %></h2>
+            <h2>Author Name: <%= authorName %></h2>
+        </div>
+        <div class="d-flex justify-content-between mb-4">
+            <a href="/author/settings" class="btn gradient-button">Settings</a>
+            <button onclick="location.href='/author/new'" class="btn gradient-button">Create New Draft</button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 column">
+                <h2>Published Articles</h2>
+                <ul class="list-group mb-4">
+                    <% publishedArticles.forEach(article => { %>
+                        <li class="list-group-item">
+                            <strong><%= article.title %></strong>
+                            <p class="text-muted">Created: <%= article.created_at %></p>
+                            <p class="text-muted">Published: <%= article.published_at %></p>
+                            <p class="text-muted">Last Modified: <%= article.last_modified %></p>
+                            <p class="text-muted">Reads: <%= article.views %></p>
+                            <p class="text-muted">Likes: <%= article.likes %></p>
+                            <a href="/reader/article/<%= article.id %>" class="btn gradient-button">Share Link</a>
+                            <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
+            <div class="col-md-6 column">
+                <h2>Draft Articles</h2>
+                <ul class="list-group">
+                    <% draftArticles.forEach(article => { %>
+                        <li class="list-group-item">
+                            <strong><%= article.title %></strong>
+                            <p class="text-muted">Created: <%= article.created_at %></p>
+                            <p class="text-muted">Last Modified: <%= article.last_modified %></p>
+                            <a href="/author/edit/<%= article.id %>" class="btn gradient-button">Edit</a>
+                            <form action="/author/publish/<%= article.id %>" method="POST" class="d-inline">
+                                <button type="submit" class="btn gradient-button">Publish</button>
+                            </form>
+                            <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+//author_home.ejs code
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Author Home Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+        }
+        .header h2 {
+            color: #343a40;
+        }
+        .column {
+            padding: 20px;
+        }
+        .list-group-item {
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Author Home Page</h1>
+            <h2>Blog Title: <%= blogTitle %></h2>
+            <h2>Author Name: <%= authorName %></h2>
+        </div>
+        <div class="d-flex justify-content-between mb-4">
+            <a href="/author/settings" class="btn gradient-button">Settings</a>
+            <button onclick="location.href='/author/new'" class="btn gradient-button">Create New Draft</button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 column">
+                <h2>Published Articles</h2>
+                <ul class="list-group mb-4">
+                    <% publishedArticles.forEach(article => { %>
+                        <li class="list-group-item">
+                            <strong><%= article.title %></strong>
+                            <p class="text-muted">Created: <%= article.created_at %></p>
+                            <p class="text-muted">Published: <%= article.published_at %></p>
+                            <p class="text-muted">Last Modified: <%= article.last_modified %></p>
+                            <p class="text-muted">Reads: <%= article.views %></p>
+                            <p class="text-muted">Likes: <%= article.likes %></p>
+                            <a href="/reader/article/<%= article.id %>" class="btn gradient-button">Share Link</a>
+                            <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
+            <div class="col-md-6 column">
+                <h2>Draft Articles</h2>
+                <ul class="list-group">
+                    <% draftArticles.forEach(article => { %>
+                        <li class="list-group-item">
+                            <strong><%= article.title %></strong>
+                            <p class="text-muted">Created: <%= article.created_at %></p>
+                            <p class="text-muted">Last Modified: <%= article.last_modified %></p>
+                            <a href="/author/edit/<%= article.id %>" class="btn gradient-button">Edit</a>
+                            <form action="/author/publish/<%= article.id %>" method="POST" class="d-inline">
+                                <button type="submit" class="btn gradient-button">Publish</button>
+                            </form>
+                            <form action="/author/delete/<%= article.id %>" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+// author_settings.ejs
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Settings</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Settings</h1>
+        <form action="/author/settings" method="POST">
+            <div class="form-group">
+                <label for="blog_title">Blog Title:</label>
+                <input type="text" id="blog_title" name="blog_title" class="form-control" value="<%= blogTitle %>" placeholder="Enter your blog title" required>
+            </div>
+            <div class="form-group">
+                <label for="author_name">Author Name:</label>
+                <input type="text" id="author_name" name="author_name" class="form-control" value="<%= authorName %>" placeholder="Enter your name" required>
+            </div>
+            <button type="submit" class="btn gradient-button">Save</button>
+            <a href="/author" class="btn btn-secondary">Back</a>
+        </form>
+    </div>
+</body>
+</html>
+
+
+
+//index.ejs
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Main Home Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+        .container {
+            text-align: center;
+        }
+        .welcome-message {
+            color: #007bff;
+        }
+        .subtext {
+            color: #343a40;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="welcome-message mb-4">Welcome to Blog with Kimy</h1>
+        <p class="subtext mb-4">Your space to share thoughts and ideas with the world.</p>
+        <a href="/author" class="btn gradient-button mb-3">Author Home Page</a>
+        <a href="/reader" class="btn gradient-button mb-3">Reader Home Page</a>
+    </div>
+</body>
+</html>
+
+
+
+//layout.ejs code
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+</head>
+<body>
+    <div class="container">
+        <%- body %>
+    </div>
+</body>
+</html>
+
+
+
+//layout.ejs code
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+</head>
+<body>
+    <div class="container">
+        <%- body %>
+    </div>
+</body>
+</html>
+
+
+
+// login.ejs code
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+        }
+        .welcome-message {
+            text-align: center;
+            color: #007bff;
+        }
+        .subtext {
+            color: #343a40;
+            text-align: center;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 welcome-message">
+                <h1>Welcome Author</h1>
+                <p class="subtext">Please log in to access your author dashboard and manage your articles.</p>
+            </div>
+            <div class="col-md-6">
+                <h1 class="mb-4">Login</h1>
+                <form action="/users/login" method="POST">
+                    <% if (error_msg) { %>
+                        <div class="alert alert-danger">
+                            <p><%= error_msg %></p>
+                        </div>
+                    <% } %>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn gradient-button">Login</button>
+                </form>
+                <p class="mt-2">Don't have an account? <a href="/users/register">Register here</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+// reader_article.ejs code 
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= article.title %></title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+        }
+        .header p {
+            color: #343a40;
+        }
+        .content {
+            text-align: left;
+        }
+        .content p {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+        .comment-section {
+            margin-top: 40px;
+        }
+        .comment-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: linear-gradient(to right, #00c6ff, #90f7ec); /* New gradient background for comments */
+            color: white;
+        }
+        .comment-item .text-muted {
+            color: #d1d1d1; /* Lighter color for date and time */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><%= article.title %></h1>
+            <p class="text-muted">Published: <%= article.published_at %></p>
+            <p class="text-muted">Views: <%= article.views %> | Likes: <%= article.likes %></p>
+        </div>
+        <div class="content">
+            <p><%= article.content %></p>
+        </div>
+        <div class="d-flex justify-content-between">
+            <form action="/reader/article/<%= article.id %>/like" method="POST">
+                <button type="submit" class="btn gradient-button">Like</button>
+            </form>
+            <button onclick="location.href='/reader'" class="btn btn-secondary">Back</button>
+        </div>
+        <div class="comment-section">
+            <h3>Comments</h3>
+            <ul class="list-group">
+                <% comments.forEach(comment => { %>
+                    <li class="list-group-item comment-item">
+                        <strong><%= comment.commenter_name %>:</strong>
+                        <p><%= comment.comment %></p>
+                        <small class="text-muted">Posted: <%= comment.created_at %></small>
+                    </li>
+                <% }) %>
+            </ul>
+            <h4>Add a Comment</h4>
+            <form action="/reader/article/<%= article.id %>/comment" method="POST">
+                <div class="form-group">
+                    <label for="commenter_name">Name:</label>
+                    <input type="text" id="commenter_name" name="commenter_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="comment">Comment:</label>
+                    <textarea id="comment" name="comment" class="form-control" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="btn gradient-button">Submit Comment</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+//reader_home.ejs code 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reader Home Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+    <style>
+        body, html {
+            height: 100%;
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+        }
+        .header h2 {
+            color: #343a40;
+        }
+        .list-group-item {
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .gradient-button {
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            border: none;
+            color: white;
+        }
+        .gradient-button:hover {
+            background: linear-gradient(to left, #007bff, #00c6ff);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Reader Home Page</h1>
+            <h2>Blog Title: <%= blogTitle %></h2>
+            <h3>Author Name: <%= authorName %></h3>
+        </div>
+        <ul class="list-group">
+            <% articles.forEach(article => { %>
+                <li class="list-group-item">
+                    <h4><%= article.title %></h4>
+                    <p class="text-muted">Published: <%= article.published_at %></p>
+                    <a href="/reader/article/<%= article.id %>" class="btn gradient-button">Read Article</a>
+                </li>
+            <% }) %>
+        </ul>
+    </div>
+</body>
+</html>
+
+
+
+//register.ejs code
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/main.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Register</h1>
+        <form action="/users/register" method="POST">
+            <% if (errors.length > 0) { %>
+                <div class="alert alert-danger">
+                    <% errors.forEach(function(error) { %>
+                        <p><%= error.msg %></p>
+                    <% }) %>
+                </div>
+            <% } %>
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" class="form-control" value="<%= typeof name !== 'undefined' ? name : '' %>" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" class="form-control" value="<%= typeof email !== 'undefined' ? email : '' %>" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="password2">Confirm Password:</label>
+                <input type="password" id="password2" name="password2" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+        <p class="mt-2">Already have an account? <a href="/users/login">Login here</a></p>
+    </div>
+</body>
+</html>
+
+
+
+//build-db.js code
+const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
+const path = require('path');
+
+const dbFilePath = path.join(__dirname, 'database.db');
+const schemaFilePath = path.join(__dirname, 'db_schema.sql');
+
+const db = new sqlite3.Database(dbFilePath, (err) => {
+    if (err) {
+        console.error('Error opening database', err);
+        process.exit(1);
+    } else {
+        console.log('Database connected');
+        db.exec(fs.readFileSync(schemaFilePath, 'utf8'), (err) => {
+            if (err) {
+                console.error('Error executing schema', err);
+            } else {
+                console.log('Database schema applied successfully');
+            }
+            db.close();
+        });
+    }
+});
+
+
+// index.js code
+const express = require('express');
+const app = express();
+const port = 3000;
+const bodyParser = require("body-parser");
+const session = require('express-session');
+const passport = require('passport');
+const flash = require('connect-flash');
+const sqlite3 = require('sqlite3').verbose();
+
+// Passport Config
+require('./config/passport')(passport);
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.set('view engine', 'ejs');
+app.use(express.static(__dirname + '/public'));
+
+// Express session
+app.use(
+    session({
+        secret: 'secret',
+        resave: true,
+        saveUninitialized: true
+    })
+);
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Connect flash
+app.use(flash());
+
+// Global variables
+app.use(function(req, res, next) {
+    res.locals.success_msg = req.flash('success_msg');
+    res.locals.error_msg = req.flash('error_msg');
+    res.locals.error = req.flash('error');
+    next();
+});
+
+// Set up SQLite
+global.db = new sqlite3.Database('./database.db', function(err) {
+    if (err) {
+        console.error(err);
+        process.exit(1); // bail out if we can't connect to the DB
+    } else {
+        console.log("Database connected");
+        global.db.run("PRAGMA foreign_keys=ON"); // tell SQLite to pay attention to foreign key constraints
+    }
+});
+
+// Handle requests to the home page 
+app.get('/', (req, res) => {
+    res.render('index');
+});
+
+// Add all the route handlers
+const usersRoutes = require('./routes/users');
+const authorsRoutes = require('./routes/authors');
+const readersRoutes = require('./routes/readers');
+app.use('/users', usersRoutes);
+app.use('/author', authorsRoutes);
+app.use('/reader', readersRoutes);
+
+// Make the web application listen for HTTP requests
+app.listen(port, () => {
+    console.log(`App listening on port ${port}`);
+});
+
+
+
+// db_schema.sql code 
+-- This makes sure that foreign_key constraints are observed and that errors will be thrown for violations
+PRAGMA foreign_keys=ON;
+
+BEGIN TRANSACTION;
+
+-- Create the users table
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create the authors table
+CREATE TABLE IF NOT EXISTS authors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    blog_title TEXT NOT NULL,
+    name TEXT NOT NULL
+);
+
+-- Create the articles table
+CREATE TABLE IF NOT EXISTS articles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    author_id INTEGER,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_modified DATETIME DEFAULT CURRENT_TIMESTAMP,
+    published_at DATETIME,
+    views INTEGER DEFAULT 0,
+    likes INTEGER DEFAULT 0,
+    FOREIGN KEY (author_id) REFERENCES users(id)
+);
+
+-- Create the comments table
+CREATE TABLE IF NOT EXISTS comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    article_id INTEGER,
+    commenter_name TEXT NOT NULL,
+    comment TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (article_id) REFERENCES articles(id)
+);
+
+COMMIT;
+

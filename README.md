@@ -1,62 +1,85 @@
-##  Coursework Template ##
-### CM2040 Database Networks and the Web ###
+# Kimy Blogging Tool Project
 
-#### Installation requirements ####
+This project is a blogging tool built with Node.js, Express.js, SQLite, and EJS. It provides a platform for authors to create, edit, and publish articles, and for readers to view and comment on the articles.
 
-* NodeJS 
-    - follow the install instructions at https://nodejs.org/en/
-    - we recommend using the latest LTS version
-* Sqlite3 
-    - follow the instructions at https://www.tutorialspoint.com/sqlite/sqlite_installation.htm 
-    - Note that the latest versions of the Mac OS and Linux come with SQLite pre-installed
+## Table of Contents
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+- [Installation](#installation)
+- [Running the Project](#running-the-project)
+- [Project Structure](#project-structure)
+- [Database Schema](#database-schema)
+- [License](#license)
 
-#### Using this template ####
+## Features
+- User registration and login
+- Author home page with published and draft articles
+- Settings page for authors to update blog title and author name
+- Create, edit, publish, and delete articles
+- Reader home page with a list of published articles
+- View individual articles with comments
+- Like and comment on articles
 
-This template sets you off in the right direction for your coursework. To get started:
+## Technologies Used
+- Node.js
+- Express.js
+- Passport.js (for authentication)
+- SQLite (database)
+- EJS (templating engine)
+- Bootstrap (for styling)
+- bcryptjs (for password hashing)
+- connect-flash (for flash messages)
+- express-session (for session handling)
+- body-parser (for parsing request bodies)
 
-* Run ```npm install``` from the project directory to install all the node packages.
+## Installation
+1. Install dependencies:
+    ```bash
+    npm install
+    ```
 
-* Run ```npm run build-db``` to create the database on Mac or Linux 
-or run ```npm run build-db-win``` to create the database on Windows
+2. Build the database:
+    ```bash
+    node build-db.js
+    ```
 
-* Run ```npm run start``` to start serving the web app (Access via http://localhost:3000)
+## Running the Project
+1. Start the server:
+    ```bash
+    node index.js
+    ```
 
-Test the app by browsing to the following routes:
+2. Open your web browser and go to `http://localhost:3000`.
 
-* http://localhost:3000
-* http://localhost:3000/users/list-users
-* http://localhost:3000/users/add-user
+## Project Structure
+- **config/**: Contains configuration files for authentication and passport.
+  - `auth.js`: Middleware to ensure user authentication.
+  - `passport.js`: Configuration for Passport.js.
+- **public/**: Contains static assets like CSS files.
+  - `main.css`: Custom CSS styles.
+- **routes/**: Contains route handlers for different parts of the application.
+  - `users.js`: Routes for user registration and login.
+  - `authors.js`: Routes for author functionalities.
+  - `readers.js`: Routes for reader functionalities.
+- **views/**: Contains EJS templates for rendering pages.
+  - `register.ejs`: User registration page.
+  - `login.ejs`: User login page.
+  - `author_home.ejs`: Author home page.
+  - `author_settings.ejs`: Author settings page.
+  - `author_edit_article.ejs`: Edit article page.
+  - `reader_home.ejs`: Reader home page.
+  - `reader_article.ejs`: View article page.
+  - `index.ejs`: Main home page.
+  - `layout.ejs`: Layout template.
+- `build-db.js`: Script to build the SQLite database.
+- `db_schema.sql`: SQL schema for the database.
+- `index.js`: Entry point of the application.
 
-You can also run: 
-```npm run clean-db``` to delete the database on Mac or Linux before rebuilding it for a fresh start
-```npm run clean-db-win``` to delete the database on Windows before rebuilding it for a fresh start
+## Database Schema
+The project uses SQLite for the database. The schema is defined in `db_schema.sql` and includes the following tables:
+- **users**: Stores user information (id, name, email, password, created_at).
+- **authors**: Stores author information (id, blog_title, name).
+- **articles**: Stores article information (id, author_id, title, content, created_at, last_modified, published_at, views, likes).
+- **comments**: Stores comments on articles (id, article_id, commenter_name, comment, created_at).
 
-Please also read the document ```Working with this Template.pdf``` for further guidance.
-
-##### Creating database tables #####
-
-* All database tables should created by modifying the db_schema.sql 
-* This allows us to review and recreate your database simply by running ```npm run build-db```
-* Do NOT create or alter database tables through other means
-
-
-#### Preparing for submission ####
-
-Make a copy of your project folder.
-In your copy, delete the following files and folders:
-* node_modules
-* .git (the hidden folder with your git repository)
-* database.db (your database)
-
-Make sure that your ``package.json`` file includes all of the dependencies for your project. NB. you need to use the ```--save``` tag each time you use npm to install a dependency
-
-Edit this README.md to explain any specific instructions for setting up or using your application that you want to bring to our attention:
-
-* remove the existing contents that we have provided
-* include any settings that should be adjusted in configuration files
-* include a list of the additional libraries you are using
-* anything else we need to know in order to successfully run your app
-
-
-NB. we will ONLY run ```npm install```, ```npm run build-db```, and ```npm run start``` . We will NOT install additional packages to run your code and will NOT run additional build scripts. Be careful with any additional node dependencies that you use.
 
